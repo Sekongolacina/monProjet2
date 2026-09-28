@@ -1,0 +1,27 @@
+{
+  "name": "gestion-stocks",
+  "version": "1.0.0",
+  "description": "Application web de gestion de stocks (produits, entrées/sorties, alertes)",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sekongolacina/monProjet2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Sekongolacina/monProjet2/issues"
+  },
+  "homepage": "https://github.com/Sekongolacina/monProjet2#readme",
+  "dependencies": {
+    "express": "^4.22.3"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}

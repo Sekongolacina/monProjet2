@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestion de stocks</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>📦 Gestion de stocks</h1>
+    <nav>
+      <button class="onglet actif" data-vue="produits">Produits</button>
+      <button class="onglet" data-vue="mouvements">Mouvements</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="stats">
+      <div class="carte"><span>Produits</span><strong id="stat-produits">0</strong></div>
+      <div class="carte"><span>Articles en stock</span><strong id="stat-articles">0</strong></div>
+      <div class="carte"><span>Valeur du stock</span><strong id="stat-valeur">0 €</strong></div>
+      <div class="carte alerte"><span>Alertes stock bas</span><strong id="stat-alertes">0</strong></div>
+    </section>
+
+    <section id="vue-produits" class="vue">
+      <div class="barre">
+        <input id="recherche" type="search" placeholder="Rechercher par nom ou référence…">
+        <select id="filtre-categorie"><option value="">Toutes les catégories</option></select>
+        <label class="case"><input id="filtre-alerte" type="checkbox"> Stock bas uniquement</label>
+        <button id="btn-nouveau" class="principal">+ Nouveau produit</button>
+      </div>
+      <div class="tableau">
+        <table>
+          <thead>
+            <tr><th>Référence</th><th>Nom</th><th>Catégorie</th><th class="num">Prix</th><th class="num">Quantité</th><th class="num">Seuil</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="liste-produits"></tbody>
+        </table>
+        <p id="vide-produits" class="vide" hidden>Aucun produit.</p>
+      </div>
+    </section>
+
+    <section id="vue-mouvements" class="vue" hidden>
+      <div class="tableau">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Produit</th><th>Type</th><th class="num">Quantité</th><th>Commentaire</th></tr>
+          </thead>
+          <tbody id="liste-mouvements"></tbody>
+        </table>
+        <p id="vide-mouvements" class="vide" hidden>Aucun mouvement.</p>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="dlg-produit">
+    <form id="form-produit" method="dialog">
+      <h2 id="titre-produit">Nouveau produit</h2>
+      <label>Référence <input name="reference" required></label>
+      <label>Nom <input name="nom" required></label>
+      <label>Catégorie <input name="categorie" list="liste-categories"></label>
+      <datalist id="liste-categories"></datalist>
+      <div class="ligne">
+        <label>Prix unitaire (€) <input name="prix" type="number" min="0" step="0.01" value="0"></label>
+        <label id="champ-quantite">Quantité initiale <input name="quantite" type="number" min="0" step="1" value="0"></label>
+        <label>Seuil d'alerte <input name="seuil_alerte" type="number" min="0" step="1" value="0"></label>
+      </div>
+      <p class="erreur" hidden></p>
+      <div class="actions">
+        <button type="button" data-fermer>Annuler</button>
+        <button type="submit" class="principal">Enregistrer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-mouvement">
+    <form id="form-mouvement" method="dialog">
+      <h2 id="titre-mouvement">Mouvement</h2>
+      <p id="info-mouvement" class="info"></p>
+      <input type="hidden" name="produit_id">
+      <input type="hidden" name="type">
+      <label>Quantité <input name="quantite" type="number" min="1" step="1" value="1" required></label>
+      <label>Commentaire <input name="commentaire" placeholder="Ex. : livraison fournisseur, vente…"></label>
+      <p class="erreur" hidden></p>
+      <div class="actions">
+        <button type="button" data-fermer>Annuler</button>
+        <button type="submit" class="principal">Valider</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" hidden></div>
+  <script src="app.js"></script>
+</body>
+</html>
