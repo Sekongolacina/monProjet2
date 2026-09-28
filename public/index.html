@@ -8,86 +8,243 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>📦 Gestion de stocks</h1>
-    <nav>
-      <button class="onglet actif" data-vue="produits">Produits</button>
-      <button class="onglet" data-vue="mouvements">Mouvements</button>
-    </nav>
-  </header>
+  <!-- Connexion -->
+  <section id="ecran-connexion" hidden>
+    <form id="form-connexion" class="boite">
+      <h1>📦 Gestion de stocks</h1>
+      <label>Identifiant <input name="identifiant" autocomplete="username" required autofocus></label>
+      <label>Mot de passe <input name="mot_de_passe" type="password" autocomplete="current-password" required></label>
+      <p class="erreur" hidden></p>
+      <button type="submit" class="principal">Se connecter</button>
+    </form>
+  </section>
 
-  <main>
-    <section class="stats">
-      <div class="carte"><span>Produits</span><strong id="stat-produits">0</strong></div>
-      <div class="carte"><span>Articles en stock</span><strong id="stat-articles">0</strong></div>
-      <div class="carte"><span>Valeur du stock</span><strong id="stat-valeur">0 €</strong></div>
-      <div class="carte alerte"><span>Alertes stock bas</span><strong id="stat-alertes">0</strong></div>
-    </section>
-
-    <section id="vue-produits" class="vue">
-      <div class="barre">
-        <input id="recherche" type="search" placeholder="Rechercher par nom ou référence…">
-        <select id="filtre-categorie"><option value="">Toutes les catégories</option></select>
-        <label class="case"><input id="filtre-alerte" type="checkbox"> Stock bas uniquement</label>
-        <button id="btn-nouveau" class="principal">+ Nouveau produit</button>
+  <div id="application" hidden>
+    <header>
+      <h1>📦 Gestion de stocks</h1>
+      <nav>
+        <button class="onglet" data-vue="produits">Produits</button>
+        <button class="onglet" data-vue="mouvements">Mouvements</button>
+        <button class="onglet" data-vue="fournisseurs">Fournisseurs</button>
+        <button class="onglet" data-vue="entrepots">Entrepôts</button>
+        <button class="onglet admin-seul" data-vue="utilisateurs">Utilisateurs</button>
+      </nav>
+      <div class="compte">
+        <span id="moi"></span>
+        <button id="btn-mdp" class="petit">Mot de passe</button>
+        <button id="btn-deconnexion" class="petit">Déconnexion</button>
       </div>
-      <div class="tableau">
-        <table>
-          <thead>
-            <tr><th>Référence</th><th>Nom</th><th>Catégorie</th><th class="num">Prix</th><th class="num">Quantité</th><th class="num">Seuil</th><th>Actions</th></tr>
-          </thead>
-          <tbody id="liste-produits"></tbody>
-        </table>
-        <p id="vide-produits" class="vide" hidden>Aucun produit.</p>
-      </div>
-    </section>
+    </header>
 
-    <section id="vue-mouvements" class="vue" hidden>
-      <div class="tableau">
-        <table>
-          <thead>
-            <tr><th>Date</th><th>Produit</th><th>Type</th><th class="num">Quantité</th><th>Commentaire</th></tr>
-          </thead>
-          <tbody id="liste-mouvements"></tbody>
-        </table>
-        <p id="vide-mouvements" class="vide" hidden>Aucun mouvement.</p>
-      </div>
-    </section>
-  </main>
+    <main>
+      <section class="stats">
+        <div class="carte"><span>Produits</span><strong id="stat-produits">0</strong></div>
+        <div class="carte"><span>Articles en stock</span><strong id="stat-articles">0</strong></div>
+        <div class="carte"><span>Valeur du stock</span><strong id="stat-valeur">0 €</strong></div>
+        <div class="carte alerte"><span>Alertes stock bas</span><strong id="stat-alertes">0</strong></div>
+      </section>
 
+      <!-- Produits -->
+      <section id="vue-produits" class="vue" hidden>
+        <div class="barre">
+          <input id="p-recherche" type="search" placeholder="Rechercher par nom ou référence…">
+          <select id="p-categorie"></select>
+          <select id="p-fournisseur"></select>
+          <select id="p-entrepot"></select>
+          <label class="case"><input id="p-alerte" type="checkbox"> Stock bas</label>
+          <span class="espace"></span>
+          <span class="export" data-export="produits"></span>
+          <button id="btn-nouveau-produit" class="principal ecriture">+ Produit</button>
+        </div>
+        <div class="tableau">
+          <table>
+            <thead><tr><th>Référence</th><th>Nom</th><th>Catégorie</th><th>Fournisseur</th><th class="num">Prix</th><th class="num">Quantité</th><th class="num">Seuil</th><th class="ecriture">Actions</th></tr></thead>
+            <tbody id="liste-produits"></tbody>
+          </table>
+          <p class="vide" hidden>Aucun produit.</p>
+        </div>
+      </section>
+
+      <!-- Mouvements -->
+      <section id="vue-mouvements" class="vue" hidden>
+        <div class="barre">
+          <select id="m-type">
+            <option value="">Tous les types</option>
+            <option value="entree">Entrées</option>
+            <option value="sortie">Sorties</option>
+            <option value="transfert">Transferts</option>
+          </select>
+          <select id="m-entrepot"></select>
+          <label class="case">Du <input id="m-du" type="date"></label>
+          <label class="case">au <input id="m-au" type="date"></label>
+          <span class="espace"></span>
+          <span class="export" data-export="mouvements"></span>
+        </div>
+        <div class="tableau">
+          <table>
+            <thead><tr><th>Date</th><th>Produit</th><th>Type</th><th class="num">Qté</th><th>Entrepôt</th><th>Fournisseur</th><th>Par</th><th>Commentaire</th></tr></thead>
+            <tbody id="liste-mouvements"></tbody>
+          </table>
+          <p class="vide" hidden>Aucun mouvement.</p>
+        </div>
+        <p class="note">Affiche les 200 derniers mouvements ; l'export contient tout l'historique filtré.</p>
+      </section>
+
+      <!-- Fournisseurs -->
+      <section id="vue-fournisseurs" class="vue" hidden>
+        <div class="barre">
+          <input id="f-recherche" type="search" placeholder="Rechercher un fournisseur…">
+          <span class="espace"></span>
+          <span class="export" data-export="fournisseurs"></span>
+          <button id="btn-nouveau-fournisseur" class="principal ecriture">+ Fournisseur</button>
+        </div>
+        <div class="tableau">
+          <table>
+            <thead><tr><th>Nom</th><th>Contact</th><th>Email</th><th>Téléphone</th><th class="num">Produits</th><th>Actions</th></tr></thead>
+            <tbody id="liste-fournisseurs"></tbody>
+          </table>
+          <p class="vide" hidden>Aucun fournisseur.</p>
+        </div>
+      </section>
+
+      <!-- Entrepôts -->
+      <section id="vue-entrepots" class="vue" hidden>
+        <div class="barre">
+          <span class="espace"></span>
+          <span class="export" data-export="stocks" data-libelle="État des stocks"></span>
+          <button id="btn-nouvel-entrepot" class="principal admin-seul">+ Entrepôt</button>
+        </div>
+        <div class="tableau">
+          <table>
+            <thead><tr><th>Nom</th><th>Adresse</th><th class="num">Produits</th><th class="num">Articles</th><th class="num">Valeur</th><th>Actions</th></tr></thead>
+            <tbody id="liste-entrepots"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Utilisateurs -->
+      <section id="vue-utilisateurs" class="vue" hidden>
+        <div class="barre">
+          <span class="espace"></span>
+          <button id="btn-nouvel-utilisateur" class="principal">+ Utilisateur</button>
+        </div>
+        <div class="tableau">
+          <table>
+            <thead><tr><th>Identifiant</th><th>Nom</th><th>Rôle</th><th>Statut</th><th>Créé le</th><th>Actions</th></tr></thead>
+            <tbody id="liste-utilisateurs"></tbody>
+          </table>
+        </div>
+        <p class="note"><strong>Admin</strong> : tout, y compris utilisateurs et entrepôts · <strong>Gestionnaire</strong> : produits, fournisseurs et mouvements · <strong>Lecteur</strong> : consultation et exports.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Dialogues -->
   <dialog id="dlg-produit">
-    <form id="form-produit" method="dialog">
-      <h2 id="titre-produit">Nouveau produit</h2>
-      <label>Référence <input name="reference" required></label>
-      <label>Nom <input name="nom" required></label>
-      <label>Catégorie <input name="categorie" list="liste-categories"></label>
+    <form>
+      <h2></h2>
+      <div class="ligne">
+        <label>Référence <input name="reference" required maxlength="50"></label>
+        <label>Nom <input name="nom" required maxlength="200"></label>
+      </div>
+      <div class="ligne">
+        <label>Catégorie <input name="categorie" list="liste-categories" maxlength="100"></label>
+        <label>Fournisseur <select name="fournisseur_id"></select></label>
+      </div>
       <datalist id="liste-categories"></datalist>
       <div class="ligne">
         <label>Prix unitaire (€) <input name="prix" type="number" min="0" step="0.01" value="0"></label>
-        <label id="champ-quantite">Quantité initiale <input name="quantite" type="number" min="0" step="1" value="0"></label>
         <label>Seuil d'alerte <input name="seuil_alerte" type="number" min="0" step="1" value="0"></label>
       </div>
-      <p class="erreur" hidden></p>
-      <div class="actions">
-        <button type="button" data-fermer>Annuler</button>
-        <button type="submit" class="principal">Enregistrer</button>
+      <div class="ligne creation-seule">
+        <label>Quantité initiale <input name="quantite" type="number" min="0" step="1" value="0"></label>
+        <label>Dans l'entrepôt <select name="entrepot_id"></select></label>
       </div>
+      <p class="erreur" hidden></p>
+      <div class="actions"><button type="button" data-fermer>Annuler</button><button type="submit" class="principal">Enregistrer</button></div>
     </form>
   </dialog>
 
   <dialog id="dlg-mouvement">
-    <form id="form-mouvement" method="dialog">
-      <h2 id="titre-mouvement">Mouvement</h2>
-      <p id="info-mouvement" class="info"></p>
+    <form>
+      <h2></h2>
+      <p class="info" id="info-mouvement"></p>
       <input type="hidden" name="produit_id">
-      <input type="hidden" name="type">
-      <label>Quantité <input name="quantite" type="number" min="1" step="1" value="1" required></label>
-      <label>Commentaire <input name="commentaire" placeholder="Ex. : livraison fournisseur, vente…"></label>
-      <p class="erreur" hidden></p>
-      <div class="actions">
-        <button type="button" data-fermer>Annuler</button>
-        <button type="submit" class="principal">Valider</button>
+      <div class="ligne">
+        <label>Type
+          <select name="type">
+            <option value="entree">Entrée</option>
+            <option value="sortie">Sortie</option>
+            <option value="transfert">Transfert</option>
+          </select>
+        </label>
+        <label>Quantité <input name="quantite" type="number" min="1" step="1" value="1" required></label>
       </div>
+      <div class="ligne">
+        <label><span id="libelle-entrepot">Entrepôt</span> <select name="entrepot_id" required></select></label>
+        <label class="si-transfert">Vers <select name="entrepot_dest_id"></select></label>
+        <label class="si-entree">Fournisseur <select name="fournisseur_id"></select></label>
+      </div>
+      <label>Commentaire <input name="commentaire" maxlength="500" placeholder="Ex. : livraison, vente, inventaire…"></label>
+      <p class="erreur" hidden></p>
+      <div class="actions"><button type="button" data-fermer>Annuler</button><button type="submit" class="principal">Valider</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-fournisseur">
+    <form>
+      <h2></h2>
+      <label>Nom <input name="nom" required maxlength="150"></label>
+      <div class="ligne">
+        <label>Contact <input name="contact" maxlength="150"></label>
+        <label>Téléphone <input name="telephone" type="tel" maxlength="50"></label>
+      </div>
+      <label>Email <input name="email" type="email" maxlength="150"></label>
+      <label>Adresse <input name="adresse" maxlength="300"></label>
+      <label>Notes <textarea name="notes" rows="3" maxlength="1000"></textarea></label>
+      <p class="erreur" hidden></p>
+      <div class="actions"><button type="button" data-fermer>Annuler</button><button type="submit" class="principal">Enregistrer</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-entrepot">
+    <form>
+      <h2></h2>
+      <label>Nom <input name="nom" required maxlength="100"></label>
+      <label>Adresse <input name="adresse" maxlength="300"></label>
+      <p class="erreur" hidden></p>
+      <div class="actions"><button type="button" data-fermer>Annuler</button><button type="submit" class="principal">Enregistrer</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-utilisateur">
+    <form>
+      <h2></h2>
+      <div class="ligne">
+        <label>Identifiant <input name="identifiant" required maxlength="50" pattern="[A-Za-z0-9._@\-]+" autocomplete="off"></label>
+        <label>Nom complet <input name="nom" maxlength="100"></label>
+      </div>
+      <label>Rôle
+        <select name="role">
+          <option value="gestionnaire">Gestionnaire</option>
+          <option value="lecteur">Lecteur</option>
+          <option value="admin">Administrateur</option>
+        </select>
+      </label>
+      <label><span id="libelle-mdp">Mot de passe</span> <input name="mot_de_passe" type="password" minlength="8" autocomplete="new-password"></label>
+      <p class="erreur" hidden></p>
+      <div class="actions"><button type="button" data-fermer>Annuler</button><button type="submit" class="principal">Enregistrer</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-mdp">
+    <form>
+      <h2></h2>
+      <label>Mot de passe actuel <input name="ancien" type="password" required autocomplete="current-password"></label>
+      <label>Nouveau mot de passe (8 caractères min.) <input name="nouveau" type="password" minlength="8" required autocomplete="new-password"></label>
+      <label>Confirmation <input name="confirmation" type="password" minlength="8" required autocomplete="new-password"></label>
+      <p class="erreur" hidden></p>
+      <div class="actions"><button type="button" data-fermer>Annuler</button><button type="submit" class="principal">Changer</button></div>
     </form>
   </dialog>
 

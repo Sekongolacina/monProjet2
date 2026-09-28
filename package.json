@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node --disable-warning=ExperimentalWarning src/server.js",
-    "test": "node --disable-warning=ExperimentalWarning --test"
+    "test": "node --disable-warning=ExperimentalWarning --test 'test/*.test.js'"
   },
   "repository": {
     "type": "git",
@@ -19,9 +19,13 @@
   },
   "homepage": "https://github.com/Sekongolacina/monProjet2#readme",
   "dependencies": {
+    "exceljs": "^4.4.0",
     "express": "^4.22.3"
   },
   "engines": {
     "node": ">=22.13"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }
