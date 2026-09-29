@@ -1,0 +1,436 @@
+<title>Performance commerciale 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: filter bar → KPI strip → insight list → chart grid (2 cols, 1 on phone) → heatmap → monthly table */
+:root {
+  --bg: #f3f4f1; --surface: #fcfcfb; --fg: #151714; --fg-2: #52554e; --muted: #85887f;
+  --line: #e1e3dc; --grid: #ebece7; --chip: #e8eae4;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4;
+  --target: #b9bbb3; --good: #0f7a3d; --bad: #c2392f; --warn: #a86b00;
+  --heat-lo: #fcfcfb; --heat-hi: #184f95; --on-strong: #ffffff;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111210; --surface: #1a1a19; --fg: #f4f4f0; --fg-2: #c3c2b7; --muted: #8d8c84;
+  --line: #2e2f2b; --grid: #262724; --chip: #262724;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  --target: #55564f; --good: #4cc27a; --bad: #ef6b61; --warn: #e0a53a;
+  --heat-lo: #1a1a19; --heat-hi: #3987e5; --on-strong: #ffffff; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111210; --surface: #1a1a19; --fg: #f4f4f0; --fg-2: #c3c2b7; --muted: #8d8c84;
+  --line: #2e2f2b; --grid: #262724; --chip: #262724;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181;
+  --target: #55564f; --good: #4cc27a; --bad: #ef6b61; --warn: #e0a53a;
+  --heat-lo: #1a1a19; --heat-hi: #3987e5; --on-strong: #ffffff; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: clamp(16px, 3vw, 32px); padding-block: 28px 56px; display: grid; gap: 28px }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0 }
+h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); font-weight: 700; letter-spacing: -0.02em }
+h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em }
+h3 { font-size: 1rem; font-weight: 700 }
+.eyebrow { font-size: .72rem; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 600 }
+.sub { color: var(--fg-2); max-width: 70ch; margin: 6px 0 0 }
+.num { font-variant-numeric: tabular-nums }
+
+header { display: grid; gap: 4px }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { font: 500 .85rem var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 5px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px }
+.chip:hover { border-color: var(--muted) }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.chip .dot { width: 8px; height: 8px; border-radius: 2px }
+button:focus-visible, select:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px }
+label.sel { display: inline-flex; gap: 8px; align-items: center; font-size: .85rem; color: var(--fg-2) }
+select { font: 500 .85rem var(--body); padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg) }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden }
+.kpi { background: var(--surface); padding: 14px 16px; display: grid; gap: 2px; align-content: start }
+.kpi .v { font-family: var(--display); font-size: 1.85rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15 }
+.kpi .d { font-size: .8rem; color: var(--fg-2) }
+.up { color: var(--good) } .down { color: var(--bad) }
+
+.insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px }
+.ins { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0 }
+.ins p { margin: 0; color: var(--fg-2); font-size: .9rem }
+.tag { justify-self: start; font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--fg-2) }
+.tag.alert { color: var(--bad) } .tag.watch { color: var(--warn) } .tag.good { color: var(--good) }
+
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 16px 12px; display: grid; gap: 8px; min-width: 0 }
+.card.wide { grid-column: 1 / -1 }
+.card .note { font-size: .82rem; color: var(--fg-2); margin: 0 }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .8rem; color: var(--fg-2) }
+.legend span { display: inline-flex; align-items: center; gap: 6px }
+.legend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px }
+.legend i.ln { height: 2px; border-radius: 1px; width: 16px }
+.legend i.dash { height: 0; border-top: 2px dashed; background: none !important; width: 16px }
+.cv { position: relative; height: 280px }
+.cv.tall { height: 420px }
+@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr) } .cv { height: 240px } }
+
+.scroll { overflow-x: auto }
+table { border-collapse: collapse; width: 100%; font-size: .85rem; font-variant-numeric: tabular-nums }
+th, td { padding: 6px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--grid) }
+th:first-child, td:first-child, .heat th:nth-child(2) { text-align: left }
+thead th { font-weight: 600; color: var(--fg-2); font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--line) }
+tfoot td { font-weight: 600; border-top: 1px solid var(--line) }
+.heat td.c { text-align: center; min-width: 54px; border: 2px solid var(--surface); border-radius: 4px }
+.heat td.na { color: var(--muted) }
+.heat td .z { color: var(--muted); font-size: .75rem; display: block }
+.heat-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: end }
+.scale { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: var(--fg-2) }
+.scale .bar { width: 120px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--heat-lo), var(--heat-hi)); border: 1px solid var(--line) }
+footer { color: var(--muted); font-size: .8rem }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Force de vente · janvier → août 2026 · 14 visiteurs, 5 zones</span>
+    <h1>Performance commerciale 2026</h1>
+    <p class="sub">Évolution mensuelle des visites, commandes, recouvrements et prospection. Les filtres ci-dessous s'appliquent à tous les indicateurs, graphiques et tableaux de la page.</p>
+  </header>
+
+  <div class="filters" role="group" aria-label="Filtres">
+    <div class="chips" id="zones"></div>
+    <label class="sel" for="visiteur">Visiteur
+      <select id="visiteur"></select>
+    </label>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Indicateurs cumulés"></section>
+
+  <section style="display:grid;gap:12px">
+    <h2>Ce qu'il faut retenir</h2>
+    <div class="insights" id="insights"></div>
+  </section>
+
+  <section class="grid">
+    <div class="card wide">
+      <h3>Activité mensuelle par type de visite</h3>
+      <div class="legend" id="lg-act"></div>
+      <div class="cv"><canvas id="c-act" aria-label="Courbes des visites commerciales, de recouvrement et de prospection par mois"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Visites commerciales : réalisé vs objectif</h3>
+      <div class="legend" id="lg-objc"></div>
+      <div class="cv"><canvas id="c-objc"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Visites de recouvrement : réalisé vs objectif</h3>
+      <div class="legend" id="lg-objr"></div>
+      <div class="cv"><canvas id="c-objr"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Commandes obtenues et encaissements reçus</h3>
+      <div class="legend" id="lg-ce"></div>
+      <div class="cv"><canvas id="c-ce"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Taux de conversion et taux d'encaissement</h3>
+      <div class="legend" id="lg-taux"></div>
+      <div class="cv"><canvas id="c-taux"></canvas></div>
+      <p class="note">Conversion = commandes ÷ visites commerciales. Encaissement = encaissements ÷ visites de recouvrement.</p>
+    </div>
+    <div class="card">
+      <h3>Commandes par zone</h3>
+      <div class="legend" id="lg-cz"></div>
+      <div class="cv"><canvas id="c-cz"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Visites de prospection par zone</h3>
+      <div class="legend" id="lg-pz"></div>
+      <div class="cv"><canvas id="c-pz"></canvas></div>
+    </div>
+    <div class="card wide">
+      <h3>Classement des visiteurs (cumul janv → août)</h3>
+      <div class="legend" id="lg-vis"></div>
+      <div class="cv tall" id="cv-vis"><canvas id="c-vis"></canvas></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="heat-head">
+      <div style="display:grid;gap:4px">
+        <h3>Carte de chaleur visiteur × mois</h3>
+        <label class="sel" for="heatMetric">Indicateur
+          <select id="heatMetric">
+            <option value="cmd">Commandes obtenues</option>
+            <option value="conv">Taux de conversion (%)</option>
+            <option value="enc">Encaissements reçus</option>
+            <option value="tenc">Taux d'encaissement (%)</option>
+            <option value="vc">Visites commerciales</option>
+            <option value="pro">Visites de prospection</option>
+          </select>
+        </label>
+      </div>
+      <div class="scale"><span id="sc-lo">0</span><span class="bar"></span><span id="sc-hi">max</span> · « — » = mois non renseigné</div>
+    </div>
+    <div class="scroll"><table class="heat" id="heat"></table></div>
+  </section>
+
+  <section class="card">
+    <h3>Tableau mensuel</h3>
+    <div class="scroll"><table id="tbl"></table></div>
+  </section>
+
+  <footer>Source : extraction de l'activité des visiteurs, janvier à août 2026 (108 lignes). Mois manquants : Boris KONAN et Jean-Pierre KOUAME en janvier, Davy KINIMO en mai, Thérèse KOUADIO en août.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// [mois, zone, visiteur, visitesTot, visitesCom, objCom, commandes, objRec, visitesRec, encaissements, prospection]
+const ROWS = [["août","District Abidjan","Davy KINIMO",31,31,16,29,22,29,29,0],["avr","District Abidjan","Davy KINIMO",36,36,18,34,26,34,34,1],["févr","District Abidjan","Davy KINIMO",36,36,18,32,25,32,32,1],["janv","District Abidjan","Davy KINIMO",34,34,17,32,25,32,31,0],["juil","District Abidjan","Davy KINIMO",37,37,19,36,28,37,37,3],["juin","District Abidjan","Davy KINIMO",35,35,18,29,23,30,30,5],["mars","District Abidjan","Davy KINIMO",22,22,11,22,17,22,22,0],["août","District Abidjan","Serge ADJO",78,78,39,77,22,28,1,0],["avr","District Abidjan","Serge ADJO",73,73,37,69,5,7,2,0],["févr","District Abidjan","Serge ADJO",68,68,34,62,8,10,0,0],["janv","District Abidjan","Serge ADJO",58,58,29,50,8,10,0,0],["juil","District Abidjan","Serge ADJO",81,81,41,68,20,26,0,0],["juin","District Abidjan","Serge ADJO",86,86,43,77,15,20,3,0],["mai","District Abidjan","Serge ADJO",63,63,32,58,9,12,4,0],["mars","District Abidjan","Serge ADJO",79,79,40,69,5,7,3,0],["août","District Abidjan","Jean-Pierre KOUAME",54,54,27,38,30,39,39,0],["avr","District Abidjan","Jean-Pierre KOUAME",51,51,26,39,31,40,40,0],["févr","District Abidjan","Jean-Pierre KOUAME",67,67,34,49,38,49,49,0],["juil","District Abidjan","Jean-Pierre KOUAME",69,69,35,42,32,42,42,0],["juin","District Abidjan","Jean-Pierre KOUAME",76,76,38,51,40,52,52,0],["mai","District Abidjan","Jean-Pierre KOUAME",59,59,30,31,25,32,32,0],["mars","District Abidjan","Jean-Pierre KOUAME",76,76,38,45,35,45,43,0],["avr","Intérieur","Thérèse KOUADIO",38,38,19,8,15,19,8,21],["févr","Intérieur","Thérèse KOUADIO",37,29,15,17,24,31,20,5],["janv","Intérieur","Thérèse KOUADIO",13,13,7,6,10,13,6,0],["juil","Intérieur","Thérèse KOUADIO",39,39,20,0,12,16,0,23],["juin","Intérieur","Thérèse KOUADIO",27,27,14,4,12,16,5,13],["mai","Intérieur","Thérèse KOUADIO",19,19,10,5,5,6,5,17],["mars","Intérieur","Thérèse KOUADIO",26,26,13,15,15,20,15,8],["août","Intérieur","Boris KONAN",67,67,34,0,18,24,0,44],["avr","Intérieur","Boris KONAN",67,67,34,12,28,36,12,33],["févr","Intérieur","Boris KONAN",70,70,35,41,51,66,38,2],["juil","Intérieur","Boris KONAN",67,67,34,0,14,18,0,49],["juin","Intérieur","Boris KONAN",56,56,28,11,23,30,11,31],["mai","Intérieur","Boris KONAN",49,49,25,20,22,29,19,30],["mars","Intérieur","Boris KONAN",65,65,33,19,33,43,17,25],["août","Intérieur","Edmond KOUASSI",39,18,9,13,22,28,15,10],["avr","Intérieur","Edmond KOUASSI",50,27,14,18,22,29,20,15],["févr","Intérieur","Edmond KOUASSI",54,35,18,29,35,45,36,6],["janv","Intérieur","Edmond KOUASSI",42,33,17,27,28,37,32,3],["juil","Intérieur","Edmond KOUASSI",25,13,7,8,15,20,10,3],["juin","Intérieur","Edmond KOUASSI",59,32,16,24,32,41,28,17],["mai","Intérieur","Edmond KOUASSI",48,33,17,27,26,34,22,15],["mars","Intérieur","Edmond KOUASSI",23,11,6,9,15,20,17,1],["août","Intérieur","Arnaud DEDI",51,51,26,45,36,47,47,25],["avr","Intérieur","Arnaud DEDI",53,52,26,22,21,27,25,25],["févr","Intérieur","Arnaud DEDI",48,48,24,31,28,37,35,20],["janv","Intérieur","Arnaud DEDI",29,27,14,19,16,21,21,14],["juil","Intérieur","Arnaud DEDI",54,54,27,41,32,42,42,24],["juin","Intérieur","Arnaud DEDI",43,43,22,26,25,33,32,15],["mai","Intérieur","Arnaud DEDI",44,44,22,32,26,34,33,22],["mars","Intérieur","Arnaud DEDI",51,51,26,35,30,39,39,23],["août","Périphérie","Jason GOULIA",6,6,3,6,5,6,6,0],["avr","Périphérie","Jason GOULIA",47,47,24,43,35,46,44,1],["févr","Périphérie","Jason GOULIA",37,37,19,34,27,35,33,3],["janv","Périphérie","Jason GOULIA",11,11,6,11,8,11,11,0],["juil","Périphérie","Jason GOULIA",34,32,16,30,24,31,26,2],["juin","Périphérie","Jason GOULIA",42,42,21,33,32,42,33,0],["mai","Périphérie","Jason GOULIA",34,33,17,31,25,33,31,1],["mars","Périphérie","Jason GOULIA",18,18,9,16,14,18,12,0],["août","Périphérie","Marie YABA",37,37,19,35,28,37,27,2],["avr","Périphérie","Marie YABA",26,26,13,24,20,26,24,0],["févr","Périphérie","Marie YABA",43,43,22,42,33,43,40,3],["janv","Périphérie","Marie YABA",34,34,17,33,26,34,33,0],["juil","Périphérie","Marie YABA",42,42,21,40,32,42,35,0],["juin","Périphérie","Marie YABA",48,48,24,40,37,48,38,0],["mai","Périphérie","Marie YABA",42,42,21,41,32,42,40,0],["mars","Périphérie","Marie YABA",29,29,15,27,22,29,23,0],["août","Périphérie","Arnaud KOUAME",36,27,14,23,19,25,25,9],["avr","Périphérie","Arnaud KOUAME",37,33,17,25,19,25,25,5],["févr","Périphérie","Arnaud KOUAME",36,34,17,20,17,22,22,3],["janv","Périphérie","Arnaud KOUAME",28,24,12,19,16,21,21,5],["juil","Périphérie","Arnaud KOUAME",30,26,13,22,18,23,22,4],["juin","Périphérie","Arnaud KOUAME",46,43,22,27,28,37,36,4],["mai","Périphérie","Arnaud KOUAME",28,25,13,17,16,21,21,3],["mars","Périphérie","Arnaud KOUAME",39,37,19,33,26,34,33,4],["août","Key Account","Désirée YORO",30,30,15,30,22,29,29,5],["avr","Key Account","Désirée YORO",22,22,11,22,17,22,22,0],["févr","Key Account","Désirée YORO",49,49,25,48,38,49,49,7],["janv","Key Account","Désirée YORO",26,25,13,25,19,25,25,2],["juil","Key Account","Désirée YORO",35,35,18,34,27,35,34,3],["juin","Key Account","Désirée YORO",20,20,10,20,15,20,20,1],["mai","Key Account","Désirée YORO",32,32,16,32,25,32,32,1],["mars","Key Account","Désirée YORO",11,11,6,11,8,11,11,0],["août","Industrial","Hamed BELLO",24,22,11,18,15,19,16,2],["avr","Industrial","Hamed BELLO",2,2,1,2,1,1,1,0],["févr","Industrial","Hamed BELLO",34,29,15,22,18,24,21,5],["janv","Industrial","Hamed BELLO",16,12,6,10,8,10,9,4],["juil","Industrial","Hamed BELLO",45,41,21,36,24,31,31,7],["juin","Industrial","Hamed BELLO",28,22,11,16,10,13,11,6],["mai","Industrial","Hamed BELLO",25,24,12,23,14,18,16,4],["mars","Industrial","Hamed BELLO",21,16,8,14,11,14,13,6],["août","Industrial","Hervé ADOM",38,26,13,26,26,34,27,5],["avr","Industrial","Hervé ADOM",43,34,17,31,28,37,27,4],["févr","Industrial","Hervé ADOM",31,30,15,28,23,30,21,3],["janv","Industrial","Hervé ADOM",30,29,15,26,21,27,16,5],["juil","Industrial","Hervé ADOM",25,22,11,21,19,25,17,1],["juin","Industrial","Hervé ADOM",24,23,12,22,18,23,18,1],["mai","Industrial","Hervé ADOM",29,26,13,25,20,26,14,4],["mars","Industrial","Hervé ADOM",21,17,9,15,14,18,13,2],["août","Industrial","Vanessa SILUE",31,29,15,15,21,27,17,3],["avr","Industrial","Vanessa SILUE",32,29,15,20,18,23,15,3],["févr","Industrial","Vanessa SILUE",40,40,20,25,23,30,23,4],["janv","Industrial","Vanessa SILUE",18,18,9,13,14,18,13,0],["juil","Industrial","Vanessa SILUE",27,27,14,13,18,24,12,1],["juin","Industrial","Vanessa SILUE",34,32,16,18,21,27,16,2],["mai","Industrial","Vanessa SILUE",8,7,4,4,4,5,1,1],["mars","Industrial","Vanessa SILUE",31,29,15,18,19,25,16,2]];
+const MONTHS = ["janv","févr","mars","avr","mai","juin","juil","août"];
+const MONTH_LABELS = ["Janv","Févr","Mars","Avr","Mai","Juin","Juil","Août"];
+const ZONES = ["District Abidjan","Intérieur","Périphérie","Key Account","Industrial"];
+const ZONE_TOK = { "District Abidjan":"--s1", "Intérieur":"--s2", "Périphérie":"--s3", "Key Account":"--s4", "Industrial":"--s5" };
+const F = { vt:3, vc:4, oc:5, cmd:6, or:7, vr:8, enc:9, pro:10 };
+const state = { zone: "all", visiteur: "all" };
+const fmt = n => n.toLocaleString("fr-FR");
+const pct = (a,b) => b ? (100*a/b) : null;
+const fmtPct = v => v == null ? "—" : v.toFixed(1).replace(".", ",") + " %";
+
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function filtered() {
+  return ROWS.filter(r => (state.zone === "all" || r[1] === state.zone) && (state.visiteur === "all" || r[2] === state.visiteur));
+}
+function byMonth(rows, pred) {
+  const out = MONTHS.map(() => ({ vt:0, vc:0, oc:0, cmd:0, or:0, vr:0, enc:0, pro:0, n:0 }));
+  rows.forEach(r => { if (pred && !pred(r)) return; const m = out[MONTHS.indexOf(r[0])]; m.n++; for (const k in F) m[k] += r[F[k]]; });
+  return out;
+}
+
+// ---------- filters ----------
+function buildFilters() {
+  const z = document.getElementById("zones"); z.textContent = "";
+  [["all","Toutes les zones"], ...ZONES.map(x => [x,x])].forEach(([val, label]) => {
+    const b = document.createElement("button"); b.className = "chip"; b.type = "button";
+    b.setAttribute("aria-pressed", String(state.zone === val));
+    if (val !== "all") { const d = document.createElement("span"); d.className = "dot"; d.style.background = `var(${ZONE_TOK[val]})`; b.append(d); }
+    b.append(document.createTextNode(label));
+    b.onclick = () => { state.zone = val; state.visiteur = "all"; buildFilters(); render(); };
+    z.append(b);
+  });
+  const s = document.getElementById("visiteur"); s.textContent = "";
+  const names = [...new Set(ROWS.filter(r => state.zone === "all" || r[1] === state.zone).map(r => r[2]))];
+  [["all","Tous"], ...names.map(n => [n,n])].forEach(([v,l]) => { const o = document.createElement("option"); o.value = v; o.textContent = l; s.append(o); });
+  s.value = state.visiteur;
+}
+document.getElementById("visiteur").onchange = e => { state.visiteur = e.target.value; render(); };
+document.getElementById("heatMetric").onchange = () => renderHeat();
+
+// ---------- KPIs ----------
+function renderKpis(m) {
+  const T = m.reduce((a, x) => { for (const k in x) a[k] = (a[k]||0) + x[k]; return a; }, {});
+  const last = m[7], prev = m[6];
+  const delta = (a, b, isPct) => {
+    if (a == null || b == null) return "";
+    const d = a - b; if (Math.abs(d) < 0.05) return `<span>stable vs juillet</span>`;
+    const cls = d > 0 ? "up" : "down", s = d > 0 ? "▲" : "▼";
+    return `<span class="${cls}">${s} ${isPct ? Math.abs(d).toFixed(1).replace(".", ",") + " pt" : fmt(Math.abs(d))}</span> vs juillet`;
+  };
+  const items = [
+    ["Visites totales", fmt(T.vt), `Août : ${fmt(last.vt)} · ${delta(last.vt, prev.vt)}`],
+    ["Commandes obtenues", fmt(T.cmd), `Août : ${fmt(last.cmd)} · ${delta(last.cmd, prev.cmd)}`],
+    ["Taux de conversion", fmtPct(pct(T.cmd, T.vc)), `Août : ${fmtPct(pct(last.cmd, last.vc))} · ${delta(pct(last.cmd,last.vc), pct(prev.cmd,prev.vc), true)}`],
+    ["Encaissements reçus", fmt(T.enc), `Août : ${fmt(last.enc)} · ${delta(last.enc, prev.enc)}`],
+    ["Taux d'encaissement", fmtPct(pct(T.enc, T.vr)), `Août : ${fmtPct(pct(last.enc, last.vr))} · ${delta(pct(last.enc,last.vr), pct(prev.enc,prev.vr), true)}`],
+    ["Visites de prospection", fmt(T.pro), `Août : ${fmt(last.pro)} · ${delta(last.pro, prev.pro)}`],
+  ];
+  const k = document.getElementById("kpis"); k.textContent = "";
+  items.forEach(([l, v, d]) => {
+    const el = document.createElement("div"); el.className = "kpi";
+    el.innerHTML = `<span class="eyebrow"></span><span class="v num"></span><span class="d num">${d}</span>`;
+    el.children[0].textContent = l; el.children[1].textContent = v; k.append(el);
+  });
+}
+
+// ---------- insights (computed from the current filter) ----------
+function renderInsights(rows, m) {
+  const list = [];
+  const active = m.map((x,i) => [x,i]).filter(([x]) => x.n);
+  if (!active.length) return;
+  const peak = active.reduce((a,b) => b[0].cmd > a[0].cmd ? b : a);
+  const low = active.reduce((a,b) => b[0].cmd < a[0].cmd ? b : a);
+  list.push(["good","Pic d'activité", `Meilleur mois : ${MONTH_LABELS[peak[1]].toLowerCase()} avec ${fmt(peak[0].cmd)} commandes pour ${fmt(peak[0].vc)} visites commerciales. Mois le plus faible : ${MONTH_LABELS[low[1]].toLowerCase()} (${fmt(low[0].cmd)} commandes).`]);
+  const conv = active.map(([x,i]) => [pct(x.cmd,x.vc), i]).filter(c => c[0] != null);
+  if (conv.length > 1) {
+    const f = conv[0], l = conv[conv.length-1], mn = conv.reduce((a,b) => b[0] < a[0] ? b : a);
+    list.push([l[0] < f[0] - 3 ? "watch" : "good", "Conversion", `Le taux de conversion passe de ${fmtPct(f[0])} en ${MONTH_LABELS[f[1]].toLowerCase()} à ${fmtPct(l[0])} en ${MONTH_LABELS[l[1]].toLowerCase()}, avec un point bas à ${fmtPct(mn[0])} en ${MONTH_LABELS[mn[1]].toLowerCase()}.`]);
+  }
+  const te = active.map(([x,i]) => [pct(x.enc,x.vr), i]).filter(c => c[0] != null);
+  if (te.length > 1) {
+    const f = te[0], l = te[te.length-1];
+    list.push([l[0] < f[0] - 3 ? "watch" : "good", "Recouvrement", `Le taux d'encaissement évolue de ${fmtPct(f[0])} (${MONTH_LABELS[f[1]].toLowerCase()}) à ${fmtPct(l[0])} (${MONTH_LABELS[l[1]].toLowerCase()}).`]);
+  }
+  const pf = active[0], pl = active[active.length-1];
+  if (pl[0].pro !== pf[0].pro) list.push(["", "Prospection", `Les visites de prospection passent de ${fmt(pf[0].pro)} en ${MONTH_LABELS[pf[1]].toLowerCase()} à ${fmt(pl[0].pro)} en ${MONTH_LABELS[pl[1]].toLowerCase()}. Pic : ${fmt(Math.max(...active.map(a => a[0].pro)))} visites.`]);
+  const T = m.reduce((a,x) => ({ vc:a.vc+x.vc, oc:a.oc+x.oc, vr:a.vr+x.vr, or:a.or+x.or }), {vc:0,oc:0,vr:0,or:0});
+  list.push(["watch","Objectifs à recalibrer", `Visites commerciales à ${Math.round(pct(T.vc,T.oc))} % de l'objectif et recouvrement à ${Math.round(pct(T.vr,T.or))} % tous les mois : l'objectif semble calculé comme une fraction fixe du réalisé et ne mesure pas la performance.`]);
+  // alerts per visitor
+  const perVis = {};
+  rows.forEach(r => { const p = perVis[r[2]] ||= { cmd:0, enc:0, vr:0, zero:[] }; p.cmd += r[6]; p.enc += r[9]; p.vr += r[8]; if (r[6] === 0 && r[4] > 0) p.zero.push(r[0]); });
+  Object.entries(perVis).forEach(([n,p]) => {
+    if (p.vr >= 20 && p.enc / p.vr < 0.3) list.push(["alert", n, `${fmt(p.cmd)} commandes mais seulement ${fmt(p.enc)} encaissements pour ${fmt(p.vr)} visites de recouvrement. Risque de créances non recouvrées.`]);
+    if (p.zero.length) list.push(["alert", n, `Aucune commande en ${p.zero.map(x => x).join(" et ")} malgré des visites commerciales. Activité basculée vers la prospection.`]);
+  });
+  const box = document.getElementById("insights"); box.textContent = "";
+  list.slice(0, 8).forEach(([k, t, p]) => {
+    const el = document.createElement("div"); el.className = "ins";
+    const tag = document.createElement("span"); tag.className = "tag " + k; tag.textContent = { alert:"Alerte", watch:"À surveiller", good:"Tendance", "":"Tendance" }[k];
+    const h = document.createElement("h3"); h.textContent = t;
+    const para = document.createElement("p"); para.textContent = p;
+    el.append(tag, h, para); box.append(el);
+  });
+}
+
+// ---------- charts ----------
+const charts = {};
+function legend(id, items) {
+  const el = document.getElementById(id); el.textContent = "";
+  items.forEach(([label, color, kind]) => {
+    const s = document.createElement("span"); const i = document.createElement("i");
+    if (kind) i.className = kind; i.style.background = color; i.style.borderColor = color;
+    s.append(i, document.createTextNode(label)); el.append(s);
+  });
+}
+function baseOpts(extra = {}) {
+  const fg2 = css("--fg-2"), grid = css("--grid"), surf = css("--surface"), fg = css("--fg"), line = css("--line");
+  return {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 250 },
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: surf, titleColor: fg2, bodyColor: fg, borderColor: line, borderWidth: 1, padding: 10,
+        titleFont: { family: "Instrument Sans", size: 12, weight: "500" }, bodyFont: { family: "Instrument Sans", size: 13, weight: "600" },
+        boxWidth: 12, boxHeight: 2, usePointStyle: false,
+        callbacks: { label: c => ` ${extra.pct ? fmtPct(c.parsed[extra.horizontal ? "x" : "y"]) : fmt(c.parsed[extra.horizontal ? "x" : "y"])}  ${c.dataset.label}` } }
+    },
+    scales: {
+      x: { grid: { display: !!extra.horizontal, color: grid }, border: { color: line }, ticks: { color: fg2, font: { family: "Instrument Sans" } }, stacked: !!extra.stacked },
+      y: { grid: { color: extra.horizontal ? "transparent" : grid }, border: { display: false }, ticks: { color: fg2, font: { family: "Instrument Sans" }, ...(extra.pct ? { callback: v => v + " %" } : {}) }, stacked: !!extra.stacked, beginAtZero: !extra.pct, ...(extra.y || {}) }
+    },
+    ...(extra.horizontal ? { indexAxis: "y" } : {})
+  };
+}
+function lineDs(label, data, color, dashed) {
+  return { type: "line", label, data, borderColor: color, backgroundColor: color, borderWidth: 2, pointRadius: 3.5, pointHoverRadius: 5,
+    pointBackgroundColor: color, pointBorderColor: css("--surface"), pointBorderWidth: 2, tension: 0.25, spanGaps: true, borderDash: dashed ? [5,4] : [] };
+}
+function barDs(label, data, color, stacked) {
+  return { label, data, backgroundColor: color, hoverBackgroundColor: color, borderColor: css("--surface"),
+    borderWidth: stacked ? { top: 2 } : 0, borderRadius: stacked ? 2 : { topLeft: 4, topRight: 4 }, borderSkipped: stacked ? false : "start",
+    categoryPercentage: 0.72, barPercentage: 0.9 };
+}
+function draw(id, type, datasets, opts, labels = MONTH_LABELS) {
+  charts[id]?.destroy();
+  charts[id] = new Chart(document.getElementById(id), { type, data: { labels, datasets }, options: opts });
+}
+
+function renderCharts(rows, m) {
+  const s1 = css("--s1"), s2 = css("--s2"), s3 = css("--s3"), tgt = css("--target");
+  const nz = arr => arr.map((v,i) => m[i].n ? v : null);
+
+  draw("c-act", "line", [
+    lineDs("Visites commerciales", nz(m.map(x => x.vc)), s1),
+    lineDs("Visites de recouvrement", nz(m.map(x => x.vr)), s2),
+    lineDs("Visites de prospection", nz(m.map(x => x.pro)), s3),
+  ], baseOpts());
+  legend("lg-act", [["Visites commerciales", s1, "ln"], ["Visites de recouvrement", s2, "ln"], ["Visites de prospection", s3, "ln"]]);
+
+  draw("c-objc", "bar", [barDs("Réalisé", m.map(x => x.vc), s1), barDs("Objectif", m.map(x => x.oc), tgt)], baseOpts());
+  legend("lg-objc", [["Réalisé", s1], ["Objectif", tgt]]);
+  draw("c-objr", "bar", [barDs("Réalisé", m.map(x => x.vr), s1), barDs("Objectif", m.map(x => x.or), tgt)], baseOpts());
+  legend("lg-objr", [["Réalisé", s1], ["Objectif", tgt]]);
+
+  draw("c-ce", "bar", [barDs("Commandes obtenues", m.map(x => x.cmd), s1), barDs("Encaissements reçus", m.map(x => x.enc), s2)], baseOpts());
+  legend("lg-ce", [["Commandes obtenues", s1], ["Encaissements reçus", s2]]);
+
+  draw("c-taux", "line", [
+    lineDs("Taux de conversion", m.map(x => x.n ? pct(x.cmd, x.vc) : null), s1),
+    lineDs("Taux d'encaissement", m.map(x => x.n ? pct(x.enc, x.vr) : null), s2),
+  ], baseOpts({ pct: true, y: { suggestedMin: 0, suggestedMax: 100 } }));
+  legend("lg-taux", [["Taux de conversion", s1, "ln"], ["Taux d'encaissement", s2, "ln"]]);
+
+  const zones = ZONES.filter(z => rows.some(r => r[1] === z));
+  const zColor = z => css(ZONE_TOK[z]);
+  draw("c-cz", "bar", zones.map(z => barDs(z, byMonth(rows, r => r[1] === z).map(x => x.cmd), zColor(z), true)), baseOpts({ stacked: true }));
+  legend("lg-cz", zones.map(z => [z, zColor(z)]));
+  draw("c-pz", "bar", zones.map(z => barDs(z, byMonth(rows, r => r[1] === z).map(x => x.pro), zColor(z), true)), baseOpts({ stacked: true }));
+  legend("lg-pz", zones.map(z => [z, zColor(z)]));
+
+  const vis = {};
+  rows.forEach(r => { const v = vis[r[2]] ||= { zone: r[1], cmd: 0, enc: 0 }; v.cmd += r[6]; v.enc += r[9]; });
+  const names = Object.keys(vis).sort((a,b) => vis[b].cmd - vis[a].cmd);
+  document.getElementById("cv-vis").style.height = Math.max(160, names.length * 34 + 50) + "px";
+  const hOpts = baseOpts({ horizontal: true });
+  hOpts.interaction = { mode: "index", intersect: false, axis: "y" };
+  draw("c-vis", "bar", [
+    { ...barDs("Commandes obtenues", names.map(n => vis[n].cmd), s1), borderRadius: { topRight: 4, bottomRight: 4 } },
+    { ...barDs("Encaissements reçus", names.map(n => vis[n].enc), s2), borderRadius: { topRight: 4, bottomRight: 4 } },
+  ], hOpts, names);
+  legend("lg-vis", [["Commandes obtenues", s1], ["Encaissements reçus", s2]]);
+}
+
+// ---------- heatmap ----------
+function renderHeat() {
+  const rows = filtered();
+  const metric = document.getElementById("heatMetric").value;
+  const val = r => ({ cmd: r[6], enc: r[9], vc: r[4], pro: r[10], conv: pct(r[6], r[4]), tenc: pct(r[9], r[8]) })[metric];
+  const isPct = metric === "conv" || metric === "tenc";
+  const names = [...new Set(rows.map(r => r[2]))];
+  const cell = {}; rows.forEach(r => cell[r[2] + "|" + r[0]] = r);
+  const vals = rows.map(val).filter(v => v != null);
+  const max = isPct ? 100 : Math.max(1, ...vals);
+  document.getElementById("sc-lo").textContent = isPct ? "0 %" : "0";
+  document.getElementById("sc-hi").textContent = isPct ? "100 %" : fmt(max);
+  const t = document.getElementById("heat"); t.textContent = "";
+  const th = t.createTHead().insertRow();
+  ["Visiteur", "Zone", ...MONTH_LABELS].forEach(h => { const c = document.createElement("th"); c.textContent = h; th.append(c); });
+  const tb = t.createTBody();
+  names.forEach(n => {
+    const tr = tb.insertRow(); const zone = rows.find(r => r[2] === n)[1];
+    tr.insertCell().textContent = n;
+    const zc = tr.insertCell(); zc.style.textAlign = "left"; zc.style.color = "var(--fg-2)"; zc.textContent = zone;
+    MONTHS.forEach((m, i) => {
+      const td = tr.insertCell(); td.className = "c";
+      const r = cell[n + "|" + m];
+      if (!r) { td.classList.add("na"); td.textContent = "—"; td.title = `${n} · ${MONTH_LABELS[i]} : non renseigné`; return; }
+      const v = val(r);
+      if (v == null) { td.textContent = "—"; td.classList.add("na"); return; }
+      const k = Math.max(0, Math.min(1, v / max));
+      td.style.background = `color-mix(in oklab, var(--heat-hi) ${Math.round(k * 100)}%, var(--heat-lo))`;
+      td.style.color = k > 0.55 ? "var(--on-strong)" : "var(--fg)";
+      td.textContent = isPct ? Math.round(v) + " %" : fmt(v);
+      td.title = `${n} · ${MONTH_LABELS[i]} : ${isPct ? fmtPct(v) : fmt(v)}`;
+    });
+  });
+}
+
+// ---------- table ----------
+function renderTable(m) {
+  const t = document.getElementById("tbl"); t.textContent = "";
+  const cols = [["Mois"],["Visiteurs"],["Visites tot."],["Visites com."],["Obj. com."],["Commandes"],["Conversion"],["Obj. recouv."],["Visites recouv."],["Encaissements"],["Taux enc."],["Prospection"]];
+  const hr = t.createTHead().insertRow(); cols.forEach(([c]) => { const th = document.createElement("th"); th.textContent = c; hr.append(th); });
+  const line = (label, x) => [label, x.n, fmt(x.vt), fmt(x.vc), fmt(x.oc), fmt(x.cmd), fmtPct(pct(x.cmd, x.vc)), fmt(x.or), fmt(x.vr), fmt(x.enc), fmtPct(pct(x.enc, x.vr)), fmt(x.pro)];
+  const tb = t.createTBody();
+  m.forEach((x, i) => { const tr = tb.insertRow(); line(MONTH_LABELS[i], x).forEach(v => tr.insertCell().textContent = v); });
+  const T = m.reduce((a, x) => { for (const k in x) a[k] = (a[k]||0) + x[k]; return a; }, {});
+  const fr = t.createTFoot().insertRow(); line("Total", T).forEach((v, i) => fr.insertCell().textContent = i === 1 ? "" : v);
+}
+
+function render() {
+  const rows = filtered(); const m = byMonth(rows);
+  renderKpis(m); renderInsights(rows, m); renderTable(m); renderHeat();
+  if (window.Chart) renderCharts(rows, m);
+}
+buildFilters(); render();
+// Re-render charts when the theme changes (canvas colors are read from tokens)
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+</script>
